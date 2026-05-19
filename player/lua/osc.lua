@@ -935,6 +935,24 @@ local function prepare_elements()
                     end
                 end
             end
+
+            -- Customized
+            -- AB marker lines
+            if element.slider.abMarkerF ~= nil and slider_lo.gap > 0 then
+                local markers = element.slider.abMarkerF()
+                for _,marker in pairs(markers) do
+                    if marker > element.slider.min.value and marker < element.slider.max.value then
+                        local center = get_slider_ele_pos_for(element, marker)
+                        local width = slider_lo.gap
+
+                        static_ass:move_to(center - width, slider_lo.border)
+                        static_ass:line_to(center + width, slider_lo.border)
+                        static_ass:line_to(center + width, elem_geo.h - slider_lo.border)
+                        static_ass:line_to(center - width, elem_geo.h - slider_lo.border)
+                    end
+                end
+            end
+            -- /Customized
         end
 
         element.static_ass = static_ass
@@ -2519,6 +2537,25 @@ local function osc_init()
             return {}
         end
     end
+    -- Customized
+    ne.slider.abMarkerF = function ()
+        local duration = mp.get_property_number("duration")
+        if duration ~= nil then
+            local markers = {}
+            a = mp.get_property_number("ab-loop-a")
+            b = mp.get_property_number("ab-loop-b")
+            if a then
+                markers[1] = a / duration * 100
+            end
+            if b then
+                markers[#markers+1] = b / duration * 100
+            end
+            return markers
+        else
+            return {}
+        end
+    end
+    -- /Customized
     ne.slider.posF =
         function () return mp.get_property_number("percent-pos") end
     ne.slider.tooltipF = function (pos)
@@ -2593,10 +2630,12 @@ local function osc_init()
         function (element) element.state.lastseek = nil end
 
     if user_opts.scrollcontrols then
+        -- Customized
         ne.eventresponder["wheel_up_press"] =
-            function () mp.commandv("osd-auto", "seek",  10) end
+            function () mp.commandv("osd-auto", "seek", -5) end
         ne.eventresponder["wheel_down_press"] =
-            function () mp.commandv("osd-auto", "seek", -10) end
+            function () mp.commandv("osd-auto", "seek",  5) end
+        -- /Customized
     end
 
 
@@ -3255,6 +3294,10 @@ mp.observe_property("playback-time", "number", request_tick)
 observe_cached("osd-dimensions", request_init_resize)
 observe_cached("osd-scale-by-window", request_init_resize)
 mp.observe_property('touch-pos', 'native', handle_touch)
+-- Customized
+mp.observe_property("ab-loop-a", "number", request_init)
+mp.observe_property("ab-loop-b", "number", request_init)
+-- /Customized
 
 -- mouse show/hide bindings
 mp.set_key_bindings({
